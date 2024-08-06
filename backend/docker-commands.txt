@@ -1,0 +1,22 @@
+# Builds an image from a 'Dockerfile' in the same directory
+    # docker build -t <image_name>:<tag>
+docker build -t fastapi-test-project-01:latest .
+
+# Deletes previous dangling images
+docker image prune
+
+# Creates a container based on an already created image and links a container port to an outside port
+    # docker run -d --name <container_name> -p <container_port>:<outside_port>/<protocol> <image_name>
+docker run -d --name fastapi-test-container -p 80:80/tcp fastapi-test-project-01
+
+# Access a container interactively via bash shell
+    # docker exec -it <container_name/container_id> bash
+docker exec -it fastapi-test-container bash
+
+# Manages the state of the container
+    # docker container start/stop/restart <container_name>
+docker container restart fastapi-test-container
+
+# Deletes a container
+    # docker container rm <container_name>
+docker container rm fastapi-test-container
