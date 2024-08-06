@@ -133,5 +133,7 @@ dist-ssr
 *.sw?
 
 frontend/
+.prettierrc
+pyproject.toml
 fastapitest.db
 backend/app/settings.ini

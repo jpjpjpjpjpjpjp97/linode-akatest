@@ -9,6 +9,8 @@ pyjwt = "*"
 passlib = {extras = ["bcrypt"], version = "*"}
 sqlmodel = "*"
 python-decouple = "*"
+uvicorn = "*"
+gunicorn = "*"
 
 [dev-packages]
 ruff = "*"
