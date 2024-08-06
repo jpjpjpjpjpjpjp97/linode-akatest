@@ -11,6 +11,7 @@ sqlmodel = "*"
 python-decouple = "*"
 uvicorn = "*"
 gunicorn = "*"
+python-multipart = "*"
 
 [dev-packages]
 ruff = "*"
