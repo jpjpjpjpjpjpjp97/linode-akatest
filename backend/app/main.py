@@ -16,7 +16,14 @@ from utils.utils import create_groups, create_items, create_users
 
 # CORS setup
 origins: list[str] = [
-    'https://jdiaz.akamaized.com',
+    'https://jdiaz.akamaized.net',
+    'https://jdiaz.akamaized.edgesuite.net',
+    'https://69.164.193.198',
+    'https://127.0.0.1:80',
+    'https://127.0.0.1:8000',
+    'http://jdiaz.akamaized.net',
+    'http://jdiaz.akamaized.edgesuite.net',
+    'http://69.164.193.198',
     'http://127.0.0.1:80',
     'http://127.0.0.1:8000',
 ]
