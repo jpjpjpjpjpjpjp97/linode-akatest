@@ -71,6 +71,11 @@ def get_login_page():
     return FileResponse('../dist/login.html')
 
 
+@app.get('/.well-known/pki-validation/7AE15A7223EE5C942C79E9196DC6E51A.txt')
+def certificate_verification():
+    return FileResponse('../cert/7AE15A7223EE5C942C79E9196DC6E51A.txt')
+
+
 @app.get('/{full_path:path}')
 def last_resort(
     request: Request,
