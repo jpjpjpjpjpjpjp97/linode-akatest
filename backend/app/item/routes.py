@@ -1,12 +1,12 @@
 """Routes for items."""
 
-from typing import Annotated, Sequence
+from typing import Annotated, Any, Sequence
 from fastapi import APIRouter, HTTPException, Path, Query, Depends
 from sqlmodel import Session, col, select
 
+from auth.dependencies import HasPermissions
 from dependencies import ListPaginationDependency, get_session
-from user.models import UserSafe
-from user.routes import get_active_user
+from item.relationships import ItemWithRelationships
 from .models import Item, ItemCreate, ItemUpdate
 
 item_router = APIRouter(
@@ -15,14 +15,29 @@ item_router = APIRouter(
     responses={404: {'detail': 'Not found'}},
 )
 
+user_is_owner_or_admin = HasPermissions(
+    object_model=Item, valid_roles=['Administrator'], check_owner=True
+)
 
-@item_router.get('/')
+user_is_owner = HasPermissions(object_model=Item, check_owner=True)
+
+user_is_admin = HasPermissions(object_model=Item, valid_roles=['Administrator'])
+
+user_is_authenticated = HasPermissions(
+    object_model=Item,
+)
+
+
+@item_router.get(
+    '/',
+    dependencies=[Depends(user_is_authenticated)],
+    response_model=Sequence[ItemWithRelationships],
+)
 def get_items(
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[UserSafe, Depends(get_active_user)],
     pagination: Annotated[ListPaginationDependency, Depends()],
     name: Annotated[(str | None), Query(max_length=50)] = None,
-) -> Sequence[Item]:
+):
     """Get items."""
     try:
         statement = (
@@ -33,17 +48,25 @@ def get_items(
         )
         items = session.exec(statement).all()
         return items
+    except HTTPException as error:
+        raise error
     except Exception as error:
-        print(error)
-        raise HTTPException(status_code=400, detail={'Error fetching item list.'})
+        raise HTTPException(
+            status_code=400, detail='Error fetching item list.'
+        ) from error
 
 
-@item_router.post('/')
+@item_router.post(
+    '/',
+    dependencies=[
+        Depends(user_is_authenticated),
+    ],
+    response_model=ItemWithRelationships,
+)
 def create_item(
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[UserSafe, Depends(get_active_user)],
     new_item: ItemCreate,
-) -> Item:
+):
     """Create an item."""
     try:
         db_item = Item.model_validate(new_item)
@@ -51,68 +74,86 @@ def create_item(
         session.commit()
         session.refresh(db_item)
         return db_item
+    except HTTPException as error:
+        raise error
     except Exception as error:
-        print(error)
-        raise HTTPException(status_code=400, detail={'Error creating item.'})
+        raise HTTPException(status_code=400, detail='Error creating item.') from error
 
 
-@item_router.get('/{item_id}/')
+@item_router.get(
+    '/{object_id}/',
+    dependencies=[
+        Depends(user_is_owner_or_admin),
+    ],
+    response_model=ItemWithRelationships,
+)
 def get_item(
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[UserSafe, Depends(get_active_user)],
-    item_id: int,
-) -> Item:
+    object_id: int,
+):
     """Get a single item."""
     try:
-        item: Item | None = session.get(Item, item_id)
+        item: Item | None = session.get(Item, object_id)
         if item:
             return item
-        raise HTTPException(status_code=404, detail={'Item not found.'})
+        raise HTTPException(status_code=404, detail='Item not found.')
+    except HTTPException as error:
+        raise error
     except Exception as error:
-        print(error)
-        raise HTTPException(status_code=400, detail={'Error fetching item.'})
+        raise HTTPException(status_code=400, detail='Error fetching item.') from error
 
 
-@item_router.put('/{item_id}/')
+@item_router.put(
+    '/{object_id}/',
+    dependencies=[
+        Depends(user_is_owner),
+    ],
+    response_model=ItemWithRelationships,
+)
 def update_item(
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[UserSafe, Depends(get_active_user)],
-    item_id: Annotated[int | None, Path()],
+    object_id: int,
     new_item: ItemUpdate,
-) -> Item:
+):
     """Update a single item."""
     try:
         # Get item
-        item: Item | None = session.get(Item, item_id)
+        item: Item | None = session.get(Item, object_id)
         if item:
             # Update item
-            new_item_data: dict[str, any] = new_item.model_dump(exclude_unset=True)
+            new_item_data: dict[str, Any] = new_item.model_dump(exclude_unset=True)
             item.sqlmodel_update(new_item_data)
             # Saves item
             session.add(item)
             session.commit()
             session.refresh(item)
             return item
-        raise HTTPException(status_code=404, detail={'Item not found.'})
+        raise HTTPException(status_code=404, detail='Item not found.')
+    except HTTPException as error:
+        raise error
     except Exception as error:
-        print(error)
-        raise HTTPException(status_code=400, detail={'Error updating item.'})
+        raise HTTPException(status_code=400, detail='Error updating item.') from error
 
 
-@item_router.delete('/{item_id}/')
+@item_router.delete(
+    '/{object_id}/',
+    dependencies=[
+        Depends(user_is_owner),
+    ],
+)
 def delete_item(
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[UserSafe, Depends(get_active_user)],
-    item_id: int,
+    object_id: int,
 ):
     """Deletes a single item."""
     try:
-        item = session.get(Item, item_id)
+        item = session.get(Item, object_id)
         if item:
             session.delete(item)
             session.commit()
             return {'deleted': True}
         raise HTTPException(status_code=404, detail='Item not found')
+    except HTTPException as error:
+        raise error
     except Exception as error:
-        print(error)
-        raise HTTPException(status_code=400, detail={'Error deleting item.'})
+        raise HTTPException(status_code=400, detail='Error deleting item.') from error

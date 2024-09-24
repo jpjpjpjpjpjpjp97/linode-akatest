@@ -21,7 +21,7 @@ from dependencies import check_refresh_cookie
 from user.models import User
 
 
-auth_router = APIRouter(prefix='/api/v1/oauth2', tags=['Authentication'])
+auth_router = APIRouter(prefix='/api/v1/oauth2', tags=['authentication'])
 
 
 @auth_router.post('/token/')

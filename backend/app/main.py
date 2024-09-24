@@ -1,17 +1,15 @@
 """Main FastAPI app module."""
 
-from typing import Annotated
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from auth.routes import auth_router
-from user.models import UserSafe
-from user.routes import get_active_user, user_router
+from user.routes import user_router
 from group.routes import group_router
 from item.routes import item_router
-from db import create_db_and_tables
+from db import create_db_and_tables, drop_tables
 from utils.utils import create_groups, create_items, create_users
 
 # CORS setup
@@ -53,10 +51,12 @@ app.mount(
 
 @app.on_event('startup')
 def on_startup():
-    create_db_and_tables()
-    # create_items()
+    pass
+    # drop_tables()
+    # create_db_and_tables()
     # create_groups()
     # create_users()
+    # create_items()
 
 
 @app.get('/')
@@ -71,9 +71,11 @@ def get_login_page():
     return FileResponse('../dist/login.html')
 
 
-@app.get('/.well-known/pki-validation/7AE15A7223EE5C942C79E9196DC6E51A.txt')
-def certificate_verification():
-    return FileResponse('../cert/7AE15A7223EE5C942C79E9196DC6E51A.txt')
+# Linode Akamaized certificate validation file
+
+# @app.get('/.well-known/pki-validation/7AE15A7223EE5C942C79E9196DC6E51A.txt')
+# def certificate_verification():
+#     return FileResponse('../cert/7AE15A7223EE5C942C79E9196DC6E51A.txt')
 
 
 @app.get('/{full_path:path}')

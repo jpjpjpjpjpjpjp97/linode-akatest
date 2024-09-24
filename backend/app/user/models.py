@@ -1,8 +1,12 @@
-from fastapi import Depends
+from typing import TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel, Session, select
 
 from dependencies import get_session
-from group.models import Group
+from utils.models import SluggifiedModel
+
+if TYPE_CHECKING:
+    from item.models import Item
+    from group.models import GroupPermission
 
 
 class BaseUser(SQLModel):
@@ -13,7 +17,7 @@ class BaseUser(SQLModel):
     first_name: str | None = Field(default=None)
     last_name: str | None = Field(default=None)
     disabled: bool = Field(default=False)
-    group_id: int | None = Field(default=None, foreign_key='group.id')
+    group_id: int | None = Field(default=None, foreign_key='grouppermission.id')
 
     @property
     def get_full_name(self) -> str:
@@ -44,18 +48,21 @@ class UserCreate(BaseUser):
     password: str
 
 
-class UserSafe(BaseUser):
+class UserSafe(SluggifiedModel, BaseUser):
     """User without password information."""
 
     id: int
+    group: 'GroupPermission' = Relationship(back_populates='users')
+    items: list['Item'] = Relationship(back_populates='owner')
 
 
-class User(BaseUser, table=True):
+class User(SluggifiedModel, BaseUser, table=True):
     """DB User."""
 
     id: int | None = Field(default=None, primary_key=True)
     hashed_password: str = Field()
-    group: Group | None = Relationship(back_populates='users')
+    group: 'GroupPermission' = Relationship(back_populates='users')
+    items: list['Item'] = Relationship(back_populates='owner')
 
     @classmethod
     def get_user(cls, username):

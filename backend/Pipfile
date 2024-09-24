@@ -12,6 +12,8 @@ python-decouple = "*"
 uvicorn = "*"
 gunicorn = "*"
 python-multipart = "*"
+alembic = "*"
+python-slugify = "*"
 
 [dev-packages]
 ruff = "*"
